@@ -327,9 +327,9 @@ void GameApp::DrawSkybox(SkyBox* skybox) {
 	
 }
 
-void GameApp::DrawShadow()
+void GameApp::DrawShadowMap(Actor* actor)
 {
-
+	m_pd3dImmediateContext;
 }
 
 void GameApp::DrawScene()
