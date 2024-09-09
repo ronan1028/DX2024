@@ -63,6 +63,7 @@ MeshData processMesh(aiMesh* mesh, const aiScene* scene, Microsoft::WRL::ComPtr<
     InitData.pSysMem = indices;
     m_pd3dDevice->CreateBuffer(&ibd, &InitData, myMeshData.m_pIndexBuffer.GetAddressOf());
     myMeshData.indexNum = nums;
+    myMeshData.indexNum = nums;
     return myMeshData;
 }
 
