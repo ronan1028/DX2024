@@ -253,8 +253,6 @@ bool GameApp::InitResource()
 	cbd.ByteWidth = sizeof(XMFLOAT4);
 	m_pd3dDevice->CreateBuffer(&cbd, nullptr, m_eyePosBuffer.GetAddressOf());
 
-
-
 	//setting the value of constant buffer point light
 	m_PSBuffer.material.ambient = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
 	m_PSBuffer.material.diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -277,10 +275,6 @@ bool GameApp::InitResource()
 	m_pd3dImmediateContext->PSSetConstantBuffers(1, 1, m_pPSConstantBuffer.GetAddressOf());
 	m_pd3dImmediateContext->PSSetConstantBuffers(2, 1, m_eyePosBuffer.GetAddressOf());
 	// ******************
-
-
-
-
 	return true;
 }
 
@@ -332,6 +326,12 @@ void GameApp::DrawSkybox(SkyBox* skybox) {
 	m_pd3dImmediateContext->DrawIndexed(skybox->mesh.Meshdata.indexNum, 0, 0);
 	
 }
+
+void GameApp::DrawShadow()
+{
+
+}
+
 void GameApp::DrawScene()
 {
 	assert(m_pd3dImmediateContext);
