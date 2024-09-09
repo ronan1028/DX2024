@@ -57,4 +57,5 @@ private:
 	ComPtr<ID3D11RasterizerState> RSCullClockWise;
 	void DrawActor(Actor* actor);
 	void DrawSkybox(SkyBox* skybox);
+	void DrawShadow();
 };
