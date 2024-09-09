@@ -330,6 +330,7 @@ void GameApp::DrawSkybox(SkyBox* skybox) {
 void GameApp::DrawShadowMap(Actor* actor)
 {
 	m_pd3dImmediateContext;
+	// todo get point light view matrix
 }
 
 void GameApp::DrawScene()
