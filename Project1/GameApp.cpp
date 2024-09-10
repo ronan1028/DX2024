@@ -78,9 +78,7 @@ void GameApp::UpdateScene(float dt)
 	}
 
 	currentCamera->update(dt);
-	//refresh mvp matrix
-	m_CBuffer.view = XMMatrixTranspose(currentCamera->GetViewXM());
-	m_CBuffer.proj = XMMatrixTranspose(currentCamera->GetProjXM());
+
 }
 bool GameApp::InitRenderer()
 {
@@ -155,6 +153,9 @@ bool GameApp::InitResource()
 	sampDesc.MinLOD = 0;
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	m_pd3dDevice->CreateSamplerState(&sampDesc, m_pSamplerState.GetAddressOf());
+	renderTarget = new RenderTargetResource(m_pd3dDevice.Get(), 1024, 1024);
+
+
 	
 //º”‘ÿmesh
 	std::vector<MeshData> meshs= loadModel("model/sphere.obj", m_pd3dDevice);
@@ -240,6 +241,7 @@ bool GameApp::InitResource()
 	mFPCamera = currentCamera;
 	mTPCamera = new TPCamera(this, airCraft);
 	currentCamera->transform.position=XMFLOAT3(500.0f,1.0f,0.0f);
+	lightCamera = new Camera(this);
 	//init constant buffer desc
 	D3D11_BUFFER_DESC cbd;
 	ZeroMemory(&cbd, sizeof(cbd));
@@ -252,6 +254,8 @@ bool GameApp::InitResource()
 	m_pd3dDevice->CreateBuffer(&cbd, nullptr, m_pPSConstantBuffer.GetAddressOf());
 	cbd.ByteWidth = sizeof(XMFLOAT4);
 	m_pd3dDevice->CreateBuffer(&cbd, nullptr, m_eyePosBuffer.GetAddressOf());
+	cbd.ByteWidth = sizeof(VsLightViewProjBuffer);
+	m_pd3dDevice->CreateBuffer(&cbd, nullptr, m_pShadowVsConstantBuffer.GetAddressOf());
 
 	//setting the value of constant buffer point light
 	m_PSBuffer.material.ambient = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
@@ -274,6 +278,7 @@ bool GameApp::InitResource()
 	m_pd3dImmediateContext->VSSetConstantBuffers(0, 1, m_pVSConstantBuffer.GetAddressOf());
 	m_pd3dImmediateContext->PSSetConstantBuffers(1, 1, m_pPSConstantBuffer.GetAddressOf());
 	m_pd3dImmediateContext->PSSetConstantBuffers(2, 1, m_eyePosBuffer.GetAddressOf());
+	m_pd3dImmediateContext->VSGetConstantBuffers(3, 1, m_pShadowVsConstantBuffer.GetAddressOf();
 	// ******************
 	return true;
 }
@@ -333,19 +338,41 @@ void GameApp::DrawShadowMap(Actor* actor)
 	// todo get point light view matrix
 }
 
-void GameApp::DrawScene()
-{
-	assert(m_pd3dImmediateContext);
-	assert(m_pSwapChain);
-	static float black[4] = { 0.0f, 0.0f, 0.0f, 1.0f };	
-	m_pd3dImmediateContext->ClearRenderTargetView(m_pRenderTargetView.Get(), reinterpret_cast<const float*>(&black));
-	m_pd3dImmediateContext->ClearDepthStencilView(m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+void GameApp::GameAppShadowRenderPass(const ComPtr<ID3D11RenderTargetView>& RTV, const ComPtr<ID3D11DepthStencilView>& DSV) {
+	m_pd3dImmediateContext->OMSetRenderTargets(1, RTV.GetAddressOf(), DSV.Get());
+	lightCamera->transform.position = sun->transform.position;
+	lightCamera->transform.LookAt(sphere->transform.position, XMFLOAT3{ 1.0,1.0,1.0 });
+	m_CBuffer.view = XMMatrixTranspose(currentCamera->GetViewXM());
+	m_CBuffer.proj = XMMatrixTranspose(currentCamera->GetProjXM());
+	DrawShadowMap(sphere);
+	DrawShadowMap(airCraft);
+	DrawShadowMap(moon);
+}
+
+void GameApp::GameAppScenePass(const ComPtr<ID3D11RenderTargetView>& RTV, const ComPtr<ID3D11DepthStencilView>& DSV) {
+	m_pd3dImmediateContext->OMSetRenderTargets(1, m_pRenderTargetView.GetAddressOf(), m_pDepthStencilView.Get());
+
+	//refresh mvp matrix
+	m_pd3dImmediateContext->RSSetState(RSCullClockWise.Get());
+	m_CBuffer.view = XMMatrixTranspose(currentCamera->GetViewXM());
+	m_CBuffer.proj = XMMatrixTranspose(currentCamera->GetProjXM());
 	DrawActor(sphere);
 	DrawActor(sun);
 	DrawActor(moon);
 	DrawActor(airCraft);
 	m_pd3dImmediateContext->RSSetState(RSNoCull.Get());
 	DrawSkybox(skySphere);
-	m_pd3dImmediateContext->RSSetState(RSCullClockWise.Get());
+}
+
+void GameApp::DrawScene()
+{
+	assert(m_pd3dImmediateContext);
+	assert(m_pSwapChain);
+
+	GameAppShadowRenderPass(renderTarget->RTTextureRTV, renderTarget->RTTextureDSV);
+	static float black[4] = { 0.0f, 0.0f, 0.0f, 1.0f };	
+	m_pd3dImmediateContext->ClearRenderTargetView(m_pRenderTargetView.Get(), reinterpret_cast<const float*>(&black));
+	m_pd3dImmediateContext->ClearDepthStencilView(m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	GameAppShadowRenderPass(m_pRenderTargetView, m_pDepthStencilView);
 	m_pSwapChain->Present(0, 0);
 }

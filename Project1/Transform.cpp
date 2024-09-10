@@ -26,3 +26,5 @@ DirectX::XMFLOAT3 Transform::GetForwardAxis() const
 	XMStoreFloat3(&forward, R.r[2]);
 	return forward;
 }
+
+

@@ -4,6 +4,7 @@
 #include "Actor.h"
 #include "lighting.h"
 #include <memory>
+#include "RenderTargetResource.h"
 
 
 struct VSConstantBuffer
@@ -13,6 +14,12 @@ struct VSConstantBuffer
 	DirectX::XMMATRIX proj;
 	DirectX::XMMATRIX WorldInvTranspose;
 };
+
+struct VsLightViewProjBuffer {
+	DirectX::XMMATRIX lightView;
+	DirectX::XMMATRIX lightproj;
+};
+
 class GameApp : public D3DApp
 {
 public:
@@ -26,11 +33,14 @@ public:
 	Camera* currentCamera = nullptr;
 	Camera* mFPCamera = nullptr;
 	Camera* mTPCamera = nullptr;
+	Camera* lightCamera = nullptr;
 	Actor* sphere = nullptr;
 	Actor* sun = nullptr;
 	Actor* airCraft = nullptr;
 	Actor* moon = nullptr;
 	SkyBox* skySphere = nullptr;
+	RenderTargetResource* renderTarget = nullptr;
+
 private:
 	bool InitRenderer();
 	bool InitResource();
@@ -50,12 +60,16 @@ private:
 	ComPtr<ID3D11Buffer> m_pVSConstantBuffer;
 	ComPtr<ID3D11Buffer> m_pPSConstantBuffer;
 	ComPtr<ID3D11Buffer> m_eyePosBuffer;
+	ComPtr<ID3D11Buffer> m_pShadowVsConstantBuffer;
 	VSConstantBuffer m_CBuffer;
 	PSConstantBuffer m_PSBuffer;
+	VsLightViewProjBuffer m_LightViewProjBuffer;
 	ComPtr<ID3D11SamplerState> m_pSamplerState;
 	ComPtr<ID3D11RasterizerState> RSNoCull;
 	ComPtr<ID3D11RasterizerState> RSCullClockWise;
 	void DrawActor(Actor* actor);
 	void DrawSkybox(SkyBox* skybox);
 	void DrawShadowMap(Actor* actor);
+	void GameAppShadowRenderPass(const ComPtr<ID3D11RenderTargetView>& RTV, const ComPtr<ID3D11DepthStencilView>& DSV);
+	void GameAppScenePass(const ComPtr<ID3D11RenderTargetView>& RTV, const ComPtr<ID3D11DepthStencilView>& DSV);
 };
